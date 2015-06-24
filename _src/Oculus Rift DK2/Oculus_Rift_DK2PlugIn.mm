@@ -12,12 +12,18 @@
 #import "Oculus_Rift_DK2PlugIn.h"
 
 #define	kQCPlugIn_Name				@"Oculus Rift DK2"
-#define	kQCPlugIn_Description		@"Oculus Rift DK2 description"
+#define	kQCPlugIn_Description		@"Basic head orientation (in degrees) information from an attached DK2.\n\nPair with two 3D Transform patches inside each other, with Rotation Z on the outer, and Rotation X/Y on the inner."
 
 @implementation Oculus_Rift_DK2PlugIn
 
 // Here you need to declare the input / output properties as dynamic as Quartz Composer will handle their implementation
 //@dynamic inputFoo, outputBar;
+
+@dynamic outputDeviceConnected;
+@dynamic outputHeadOrientationX;
+@dynamic outputHeadOrientationY;
+@dynamic outputHeadOrientationZ;
+@dynamic inputResetOrientation;
 
 + (NSDictionary *)attributes
 {
@@ -28,31 +34,61 @@
 + (NSDictionary *)attributesForPropertyPortWithKey:(NSString *)key
 {
 	// Specify the optional attributes for property based ports (QCPortAttributeNameKey, QCPortAttributeDefaultValueKey...).
+  
+  if([key isEqualToString:@"outputDeviceConnected"])
+    return @{QCPortAttributeNameKey: @"Connected"};
+  
+  if([key isEqualToString:@"outputHeadOrientationX"])
+    return @{QCPortAttributeNameKey: @"Rotation X"};
+  
+  if([key isEqualToString:@"outputHeadOrientationY"])
+    return @{QCPortAttributeNameKey: @"Rotation Y"};
+  
+  if([key isEqualToString:@"outputHeadOrientationZ"])
+    return @{QCPortAttributeNameKey: @"Rotation Z"};
+  
+  if([key isEqualToString:@"inputResetOrientation"])
+    return @{QCPortAttributeNameKey: @"Reset"};
+  
 	return nil;
 }
 
 + (QCPlugInExecutionMode)executionMode
 {
 	// Return the execution mode of the plug-in: kQCPlugInExecutionModeProvider, kQCPlugInExecutionModeProcessor, or kQCPlugInExecutionModeConsumer.
-	return kQCPlugInExecutionModeProcessor;
+	return kQCPlugInExecutionModeProvider;
 }
 
 + (QCPlugInTimeMode)timeMode
 {
 	// Return the time dependency mode of the plug-in: kQCPlugInTimeModeNone, kQCPlugInTimeModeIdle or kQCPlugInTimeModeTimeBase.
-	return kQCPlugInTimeModeNone;
+	return kQCPlugInTimeModeIdle;
 }
 
 - (instancetype)init
 {
 	self = [super init];
 	if (self) {
-		// Allocate any permanent resource required by the plug-in.
+    // Allocate any permanent resource required by the plug-in.
+    ovr_Initialize();
+    hmd = ovrHmd_Create(0);
+    
+    if(!ovrHmd_ConfigureTracking(hmd, ovrTrackingCap_Orientation |
+                             ovrTrackingCap_MagYawCorrection |
+                             ovrTrackingCap_Position, 0))
+    {
+      NSLog(@"Error configuring tracking");
+    }
 	}
 	
 	return self;
 }
 
+-(void)dealloc
+{
+  if(hmd) { ovrHmd_Destroy(hmd); }
+  ovr_Shutdown();
+}
 
 @end
 
@@ -80,8 +116,33 @@
 	
 	The OpenGL context for rendering can be accessed and defined for CGL macros using:
 	CGLContextObj cgl_ctx = [context CGLContextObj];
-	*/
-	
+   */
+  
+  if(ovrHmd_Detect() > 0){
+    if (self.inputResetOrientation) {
+      resetOrientationX = self.outputHeadOrientationX;
+      resetOrientationY = self.outputHeadOrientationY;
+      resetOrientationZ = self.outputHeadOrientationZ;
+    }
+    
+    self.outputDeviceConnected = YES;
+    
+    trackingState = ovrHmd_GetTrackingState(hmd, ovr_GetTimeInSeconds());
+    
+    if (trackingState.StatusFlags & (ovrStatus_OrientationTracked | ovrStatus_PositionTracked)) {
+      Posef pose = trackingState.HeadPose.ThePose;
+      float x;
+      float y;
+      float z;
+      pose.Rotation.GetEulerAngles<Axis_Y, Axis_X, Axis_Z>(&y, &x, &z);
+      
+      self.outputHeadOrientationX = resetOrientationX - RadToDegree(x);
+      self.outputHeadOrientationY = resetOrientationY - RadToDegree(y);
+      self.outputHeadOrientationZ = resetOrientationZ - RadToDegree(z);
+    }
+  } else {
+    self.outputDeviceConnected = NO;
+  }
 	return YES;
 }
 
