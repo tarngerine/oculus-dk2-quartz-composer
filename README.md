@@ -16,3 +16,5 @@ Roll Camera with `Rotation Z`
 ![](https://s3.amazonaws.com/f.cl.ly/items/1H263s3u2L0h2Q1s3h0m/Image%202015-06-24%20at%2010.38.13%20AM.png)
 
 Pitch/Yaw Camera with `Rotation X/Y`
+
+Once your DK2 is plugged in, use Mirror Mode on your monitor with the DK2 as primary, so the viewer is 1080p (the resolution of DK2), and full screen the viewer.
