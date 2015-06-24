@@ -3,6 +3,9 @@ Quartz Composer plugin for Oculus DK2 basic orientation support.
 
 For optimal UI design speed, use with [Origami — a design prototyping tool from Facebook built on top of Quartz Composer](http://facebook.github.io/origami/). (Template provided requires patches from Origami).
 
+# Installation
+[Download Zip](https://github.com/tarngerine/oculus-dk2-quartz-composer/archive/master.zip) and add `Oculus Rift DK2.plugin` to your `~/Library/Graphics/Quartz Composer Plug-Ins/` folder
+
 # Setup
 Use with two `3D Transformation` patches:
 
