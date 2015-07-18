@@ -72,6 +72,9 @@
     // Allocate any permanent resource required by the plug-in.
     ovr_Initialize();
     hmd = ovrHmd_Create(0);
+    resetOrientationX = 0;
+    resetOrientationY = 0;
+    resetOrientationZ = 0;
     
     if(!ovrHmd_ConfigureTracking(hmd, ovrTrackingCap_Orientation |
                              ovrTrackingCap_MagYawCorrection |
@@ -119,17 +122,20 @@
    */
   
   if(ovrHmd_Detect() > 0){
-    if (self.inputResetOrientation) {
-      resetOrientationX = self.outputHeadOrientationX;
-      resetOrientationY = self.outputHeadOrientationY;
-      resetOrientationZ = self.outputHeadOrientationZ;
-    }
-    
     self.outputDeviceConnected = YES;
     
     trackingState = ovrHmd_GetTrackingState(hmd, ovr_GetTimeInSeconds());
     
     if (trackingState.StatusFlags & (ovrStatus_OrientationTracked | ovrStatus_PositionTracked)) {
+      if (self.inputResetOrientation &&
+          self.outputHeadOrientationX &&
+          self.outputHeadOrientationY &&
+          self.outputHeadOrientationZ) {
+        resetOrientationX = self.outputHeadOrientationX;
+        resetOrientationY = self.outputHeadOrientationY;
+        resetOrientationZ = self.outputHeadOrientationZ;
+      }
+
       Posef pose = trackingState.HeadPose.ThePose;
       float x;
       float y;
